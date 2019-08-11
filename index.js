@@ -1,5 +1,6 @@
 const fs = require('fs');
 const http = require('http');
+const {API, database} = require('./api.js');
 
 http.createServer((request, response)=>{
     console.log("req: ",request.url);
@@ -7,7 +8,13 @@ http.createServer((request, response)=>{
     request.url == "/"? file = 'index.html': file = request.url.slice(1, request.url.length);
     fs.readFile(file, (err, data) => {
         if (err){
-            console.log(err);
+            if (err = 'ENOENT'){
+                if (file.split('/')[0] === 'api'){
+                    console.log('api request ', API.test(), database.test());
+                } else {
+                    console.log("err: ", err);
+                }
+            }
         } else {
             // if (!file.includes('.')) return; //handle this later
             const ext = (file.split('.')[file.split('.').length-1]).toLowerCase();
