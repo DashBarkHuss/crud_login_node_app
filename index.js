@@ -9,7 +9,16 @@ http.createServer((request, response)=>{
         if (err){
             console.log(err);
         } else {
-            response.writeHead(200, {'Content-Type':'text/html'});
+            // if (!file.includes('.')) return; //handle this later
+            const ext = (file.split('.')[file.split('.').length-1]).toLowerCase();
+            const mime = {
+                'html': 'text/html',
+                'png': 'image/png',
+                'jpg': 'image/jpeg',
+                'jpeg': 'image/jpeg'
+            }
+            if (mime[ext] == null) mime[ext] = 'application/octet-stream';
+            response.writeHead(200, {'Content-Type':mime[ext]});
             response.end(data, 'utf-8');
         }
     })
