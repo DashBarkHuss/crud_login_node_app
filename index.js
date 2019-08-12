@@ -13,6 +13,7 @@ http.createServer((request, response)=>{
             if (err = 'ENOENT'){
                 if (API.catchAPIrequest(request.url)){
                     console.log('api request ');
+                    API.exec(request, response);
                 } else {
                     console.log("err: ", err);
                 }

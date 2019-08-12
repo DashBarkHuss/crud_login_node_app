@@ -12,10 +12,32 @@ class database {
     console.log("connected to database");
     }
 }
+
+function identify(){
+    const arr = [];
+    for (i = 0; i<arguments.length; i++){arr.push(arguments[i])};
+    return JSON.stringify(arr) == JSON.stringify(API.parts.slice(1, API.parts.length));
+}
 class API {
-    static test(params) {
-        return "apitest";
+    static exec(request, response) {
+        console.log(identify('one', 'two', 'three'));
+        if (request.method == "POST"){
+            request.chunks = [];
+            request.on('data', segment=>{
+                request.chunks.push(segment);
+            })
+
+            request.on('end',()=>{
+                let payload;
+                request.chunks.length>0? payload = JSON.parse(Buffer.concat(request.chunks).toString()) : null;
+                
+                if(identify('one', 'two', 'three')){
+                    console.log('identified')
+                }
+            });
+        }
     }
+
 
     static catchAPIrequest(url){
         console.log("url: ", url);
@@ -26,7 +48,6 @@ class API {
     }
 
 }
-
 
 
 module.exports = {API, database};
