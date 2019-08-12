@@ -2,6 +2,8 @@ const fs = require('fs');
 const http = require('http');
 const {API, database} = require('./api.js');
 
+database.create();
+
 http.createServer((request, response)=>{
     console.log("req: ",request.url);
     let file;

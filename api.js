@@ -1,6 +1,15 @@
+const mysql = require('mysql');
+
 class database {
-    static test(params) {
-        return"dbtest";
+    static create(){
+    this.connection = mysql.createConnection({
+        database: process.env.DATABASE,
+        host: process.env.HOST,
+        user: process.env.DBUSER,
+        password: process.env.PASSWORD
+    });
+    this.connection.connect();
+    console.log("connected to database");
     }
 }
 class API {
