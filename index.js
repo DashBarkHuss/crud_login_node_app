@@ -1,6 +1,7 @@
 const fs = require('fs');
 const http = require('http');
 const {API, database} = require('./api.js');
+const fetch = require('node-fetch');
 
 database.create();
 
@@ -33,3 +34,15 @@ http.createServer((request, response)=>{
         }
     })
 }).listen(3000, '127.0.0.1')
+
+const payload = {
+    method: 'POST', 
+    headers: {Accept:'application/json'}, 
+    body: JSON.stringify({
+        email: 'dangerousdashie@gmail.com', 
+        username: 'dash', 
+        password: "password"
+    })
+}
+
+fetch('http://127.0.0.1:3000/api/user/register', payload).catch((error) => { console.log("err59:", error) });

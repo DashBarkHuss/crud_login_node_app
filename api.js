@@ -13,6 +13,15 @@ class database {
     }
 }
 
+function action_user_register(request, payload){
+    return new Promise((resolve, reject)=>{
+        let q = `select * from user where username = '${payload.username}'`;
+        database.connection.query(q,(err, results)=>{
+            console.log('res: ',results)
+        })
+    })
+}
+
 function identify(){
     const arr = [];
     for (i = 0; i<arguments.length; i++){arr.push(arguments[i])};
@@ -20,7 +29,6 @@ function identify(){
 }
 class API {
     static exec(request, response) {
-        console.log(identify('one', 'two', 'three'));
         if (request.method == "POST"){
             request.chunks = [];
             request.on('data', segment=>{
@@ -31,8 +39,8 @@ class API {
                 let payload;
                 request.chunks.length>0? payload = JSON.parse(Buffer.concat(request.chunks).toString()) : null;
                 
-                if(identify('one', 'two', 'three')){
-                    console.log('identified')
+                if(identify('user', 'register')){
+                    action_user_register(request, payload)
                 }
             });
         }
