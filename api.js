@@ -16,6 +16,17 @@ class API {
     static test(params) {
         return "apitest";
     }
+
+    static catchAPIrequest(url){
+        console.log("url: ", url);
+        API.parts = url.split('/');
+        API.parts.shift();
+        console.log("parts: ", API.parts);
+        return API.parts[0] === "api";
+    }
+
 }
+
+
 
 module.exports = {API, database};

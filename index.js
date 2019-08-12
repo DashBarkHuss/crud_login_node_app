@@ -11,8 +11,8 @@ http.createServer((request, response)=>{
     fs.readFile(file, (err, data) => {
         if (err){
             if (err = 'ENOENT'){
-                if (file.split('/')[0] === 'api'){
-                    console.log('api request ', API.test(), database.test());
+                if (API.catchAPIrequest(request.url)){
+                    console.log('api request ');
                 } else {
                     console.log("err: ", err);
                 }
