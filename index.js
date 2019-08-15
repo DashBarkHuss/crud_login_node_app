@@ -39,10 +39,13 @@ const payload = {
     method: 'POST', 
     headers: {Accept:'application/json'}, 
     body: JSON.stringify({
-        email: 'dangerousdashie@gmail.com', 
+        email: 'test@gmail.com', 
         username: 'dash', 
         password: "password"
     })
 }
 
-fetch('http://127.0.0.1:3000/api/user/register', payload).catch((error) => { console.log("err59:", error) });
+fetch('http://127.0.0.1:3000/api/user/register', payload)
+.then(promise=> promise.json())
+.then(content => console.log("content ", content))
+.catch((error) => { console.log("err ln51:", error) });
