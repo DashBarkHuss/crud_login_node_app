@@ -12,35 +12,53 @@ class database {
         this.connection.connect();
         console.log("connected to database");
     };
-    static existsIn(table, clause, resolve, content){
+    static existsIn(table, clause, resolveContent, content){
         const q = `select * from ${table} where ${clause};`
-        this.connection.query(q, (err, results)=>{
-            if (err) console.log(err);
-            if (results.length !== 0) resolve(content);
+        return new Promise((resolve, reject)=>{
+            this.connection.query(q, (err, results)=>{
+                if (err) console.log(err);
+                if (results.length !== 0 && resolveContent) resolve(content);
+                if (results.length !== 0 && !resolveContent) reject(content);
+            })
         })
     };
 }
 
+    // helper function
+    function checkUserForDuplicate(clause, msg){
+        return database.existsIn(
+            'user', 
+            clause, 
+            false, 
+            {success:false, message: msg}
+        );
+    }
+
 function action_user_register(request, payload){
     return new Promise((resolve, reject)=>{
-        // helper function
-        function checkUserFor(clause, msg){
-            database.existsIn(
-                'user', 
-                clause, 
-                resolve, 
-                {success:false, message: msg}
-            );
-        }
-
         const accountExists = `username ='${payload.username}' AND email = '${payload.email}'`;
         const usernameExists = `username ='${payload.username}'`;
         const emailExists = `email = '${payload.email}'`;
         
-        // resolve if any of these exist in user table
-        checkUserFor(accountExists, `account already exists`); 
-        checkUserFor(usernameExists, `username not available`); 
-        checkUserFor(emailExists, `email already exists`); 
+        // reject if any of these exist in user table
+        checkUserForDuplicate(accountExists, `account already exists`)
+            .then(content=>{
+                if(content.success === false) resolve(content);})
+            .then(()=> 
+        checkUserForDuplicate(usernameExists, `username not available`))
+            .then(content=>{
+                if(content.success === false) resolve(content);})
+            .then(()=>
+        checkUserForDuplicate(emailExists, `email already exists`))
+            .then(content=>{
+                if(content.success === false){
+                    resolve(content);
+                } else {
+                    console.log("create account");
+                }
+        }).catch( error => reject(error));
+
+        const q 
     })
 }
 
@@ -66,7 +84,10 @@ class API {
                     .then(content => {
                         response.writeHead(200, "{ 'Content-Type': 'application/json' }");
                         response.end(JSON.stringify(content), 'utf-8');
-                    })
+                    }).catch((error)=> {
+                        response.writeHead(200, "{ 'Content-Type': 'application/json' }");
+                        response.end(JSON.stringify(error), 'utf-8')
+                    });
                 }
             });
         }
