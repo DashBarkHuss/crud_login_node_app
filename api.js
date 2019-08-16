@@ -19,46 +19,63 @@ class database {
                 if (err) console.log(err);
                 if (results.length !== 0 && resolveContent) resolve(content);
                 if (results.length !== 0 && !resolveContent) reject(content);
+                if (results.length === 0) resolve({found: false});
             })
         })
     };
+
+    static insertInto(table, fields, values){
+        values = values.join("', '")
+        const q = `insert into ${table}(${fields}) values('${values}')`;
+        return new Promise((resolve, reject)=>{
+            this.connection.query(q, (err, results)=>{
+            if (err) throw err;
+            if(results.affectedRows === 1) resolve({success: true})
+            });
+        });
+    }
 }
 
     // helper function
-    function checkUserForDuplicate(clause, msg){
-        return database.existsIn(
-            'user', 
-            clause, 
-            false, 
-            {success:false, message: msg}
-        );
-    }
+function checkUserForDuplicate(clause, msg){
+    return database.existsIn(
+        'user', 
+        clause, 
+        false, 
+        {success:false, message: msg}
+    );
+}
 
 function action_user_register(request, payload){
     return new Promise((resolve, reject)=>{
         const accountExists = `username ='${payload.username}' AND email = '${payload.email}'`;
         const usernameExists = `username ='${payload.username}'`;
         const emailExists = `email = '${payload.email}'`;
-        
-        // reject if any of these exist in user table
+  console.log(52);
+        //reject if any of these exist in user table
         checkUserForDuplicate(accountExists, `account already exists`)
-            .then(content=>{
-                if(content.success === false) resolve(content);})
-            .then(()=> 
-        checkUserForDuplicate(usernameExists, `username not available`))
-            .then(content=>{
-                if(content.success === false) resolve(content);})
-            .then(()=>
-        checkUserForDuplicate(emailExists, `email already exists`))
-            .then(content=>{
-                if(content.success === false){
-                    resolve(content);
-                } else {
-                    console.log("create account");
-                }
-        }).catch( error => reject(error));
+        .then(()=> checkUserForDuplicate(usernameExists, `username not available`))
+        .then(()=> checkUserForDuplicate(emailExists, `email already exists`))
+        .then(content=> {
+            console.log(58);
+            if(content.found === false) createAccount();
+        })
+        .catch( error => reject(error));
+        
+        function createAccount(){
+            console.log(63);
+            const username = payload.username;
+            const email = payload.email;
+            const password = payload.password;
 
-        const q 
+            const values = [username, email, password];
+            const fields = `username, email, password`;
+
+            database.insertInto('user', fields , values).then((content)=>{
+                content.message = `account ${username} created`
+                resolve(content);
+            }).catch((error)=>(console.log(error)));
+        }
     })
 }
 

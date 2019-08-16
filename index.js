@@ -39,8 +39,8 @@ const payload = {
     method: 'POST', 
     headers: {Accept:'application/json'}, 
     body: JSON.stringify({
-        email: 'test@gmail.com', 
-        username: 'dash', 
+        email: 'boop@gmail.com', 
+        username: 'dashpoo', 
         password: "password"
     })
 }
