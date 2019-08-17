@@ -1,5 +1,6 @@
 const mysql = require('mysql');
 const md5 = require('md5');
+const bcrypt = require('bcrypt');
 
 class database {
     static create(){
@@ -27,6 +28,7 @@ class database {
     static insertInto(table, fields, values){
         values = values.join("', '")
         const q = `insert into ${table}(${fields}) values('${values}')`;
+        console.log('q: ', q);
         return new Promise((resolve, reject)=>{
             this.connection.query(q, (err, results)=>{
             if (err) throw err;
@@ -36,7 +38,25 @@ class database {
     }
 }
 
-    // helper function
+// bcrypt
+function bcryptPassword(password){
+    return new Promise ((resolve,reject)=>{
+        bcrypt.genSalt(11, (err, salt)=> {
+            if (err) {
+                return reject(err);
+            }
+            bcrypt.hash(password, salt, (err, hashedPassword)=>{
+                if (err){
+                    return reject(err)
+                }
+                console.log('hp: ', hashedPassword);
+                resolve({password: hashedPassword});
+            })
+        })
+    })
+}
+
+// helper function to check user table
 function checkUserForDuplicate(clause, msg){
     return database.existsIn(
         'user', 
@@ -51,30 +71,25 @@ function action_user_register(request, payload){
         const accountExists = `username ='${payload.username}' AND email = '${payload.email}'`;
         const usernameExists = `username ='${payload.username}'`;
         const emailExists = `email = '${payload.email}'`;
-  console.log(52);
-        //reject if any of these exist in user table
+        
+        //reject if any of these exist in user table reject with success: false
         checkUserForDuplicate(accountExists, `account already exists`)
         .then(()=> checkUserForDuplicate(usernameExists, `username not available`))
         .then(()=> checkUserForDuplicate(emailExists, `email already exists`))
         .then(content=> {
-            console.log(58);
-            if(content.found === false) createAccount();
-        })
+            if(content.found === false) return bcryptPassword(payload.username);
+        }).then((content)=> createAccount(content.password))
         .catch( error => reject(error));
         
-        function createAccount(){
-            console.log(63);
+        function createAccount(bcrypt_password){
             const username = payload.username;
             const email = payload.email;
-            const password = payload.password;
-
-            const values = [username, email, password];
+            const values = [username, email, bcrypt_password];
             const fields = `username, email, password`;
-
             database.insertInto('user', fields , values).then((content)=>{
-                content.message = `account ${username} created`
+                content.message = `account ${username} created`;
                 resolve(content);
-            }).catch((error)=>(console.log(error)));
+            }).catch((error)=>(reject(error)));
         }
     })
 }
