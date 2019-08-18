@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" , "initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Document</title>
+</head>
+<body>
+  <script>
+
+  // how do we get two values from asynchronous functions and put them into one object?
+  // {firstval: "first value", secondval: "second value"}
+
+  function prom1(){
+    return new Promise ((res, rej)=> {
+      setTimeout(
+        ()=>res("first value"), 1000
+      )
+    })
+  }
+
+  function prom2(){
+    return new Promise ((res, rej)=> {
+      setTimeout(
+        ()=>res("second value"), 1000
+      )
+    })
+  }
+
+  prom1().then(content1=>{
+    return prom2().then(content2=> { return {firstVal: content1, secondVal: content2}});
+  })
+  .then(c=>console.log("c:",c))
+  </script>
+</body>
+</html>
+

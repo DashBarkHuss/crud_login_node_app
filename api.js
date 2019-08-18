@@ -1,6 +1,7 @@
 const mysql = require('mysql');
 const md5 = require('md5');
 const bcrypt = require('bcrypt');
+const nodemailer = require('nodemailer');
 
 class database {
     static create(){
@@ -38,24 +39,6 @@ class database {
     }
 }
 
-// bcrypt
-function bcryptPassword(password){
-    return new Promise ((resolve,reject)=>{
-        bcrypt.genSalt(11, (err, salt)=> {
-            if (err) {
-                return reject(err);
-            }
-            bcrypt.hash(password, salt, (err, hashedPassword)=>{
-                if (err){
-                    return reject(err)
-                }
-                console.log('hp: ', hashedPassword);
-                resolve({password: hashedPassword});
-            })
-        })
-    })
-}
-
 // helper function to check user table
 function checkUserForDuplicate(clause, msg){
     return database.existsIn(
@@ -66,6 +49,20 @@ function checkUserForDuplicate(clause, msg){
     );
 }
 
+function createHash(token){
+    return new Promise((resolve,reject)=>{
+        bcrypt.genSalt(11, (err,salt)=>{
+            if (err){
+                return reject(err);
+            }
+            bcrypt.hash(token, salt, (err, hashedToken)=>{
+                if (err) reject(err);
+                resolve(hashedToken);
+            })
+        })
+    })
+}
+
 function action_user_register(request, payload){
     return new Promise((resolve, reject)=>{
         const accountExists = `username ='${payload.username}' AND email = '${payload.email}'`;
@@ -73,25 +70,63 @@ function action_user_register(request, payload){
         const emailExists = `email = '${payload.email}'`;
         
         //reject if any of these exist in user table reject with success: false
-        checkUserForDuplicate(accountExists, `account already exists`)
-        .then(()=> checkUserForDuplicate(usernameExists, `username not available`))
-        .then(()=> checkUserForDuplicate(emailExists, `email already exists`))
+        checkUserForDuplicate(accountExists, `Account already exists.`)
+        .then(()=> checkUserForDuplicate(usernameExists, `Username not available.`))
+        .then(()=> checkUserForDuplicate(emailExists, `Account with email already exists.`))
         .then(content=> {
-            if(content.found === false) return bcryptPassword(payload.username);
-        }).then((content)=> createAccount(content.password))
+            if(content.found === false) return createHash(payload.password);
+        }).then(password=>{
+            const token = (new Date).getTime().toString() + Math.floor(Math.random()*100000);
+            return createHash(token).then(hashedToken => {
+                return {hashedToken, password, token}
+            });
+        }).then(content=>{
+            createAccount(content.password, content.hashedToken);
+            sendVerificationToken(content.token); 
+        })
         .catch( error => reject(error));
         
-        function createAccount(bcrypt_password){
-            const username = payload.username;
-            const email = payload.email;
-            const values = [username, email, bcrypt_password];
-            const fields = `username, email, password`;
+        function createAccount(password, verificationToken){
+            const values = [payload.username, payload.email, password, verificationToken];
+            const fields = `username, email, password, verificationToken`;
             database.insertInto('user', fields , values).then((content)=>{
-                content.message = `account ${username} created`;
+                content.message = `Account ${payload.username} created`;
                 resolve(content);
             }).catch((error)=>(reject(error)));
         }
+
+        function sendVerificationToken(token){ //what if we want to send it again? maybe this should be a global function
+            const transporter = nodemailer.createTransport({
+                service: 'gmail',
+                auth: {
+                    user: process.env.GMAIL,
+                    pass: process.env.GMAILPW
+                }
+            })
+            const mailOptions = {
+                from: process.env.GMAIL,
+                to: process.env.GMAIL2,
+                subject: "hey",
+                text: `http://127.0.0.1:3000/api/user/verify/${payload.username}/${token}`
+            }
+
+            transporter.sendMail(mailOptions, (error,info)=>{
+                if (error){ 
+                    console.log(error)
+                } else {
+                    console.log("Email sent: ", info.response);
+                }
+            })
+        }
     })
+}
+
+
+function action_user_verify(){
+    const user = API.parts[3] ||  null;
+    const token = API.parts[4] || null;
+    if(!user || !token) throw "incorrect URL";
+    console.log("hi");
 }
 
 function identify(){
@@ -121,6 +156,18 @@ class API {
                         response.end(JSON.stringify(error), 'utf-8')
                     });
                 }
+
+                if(identify('user', 'verify')){
+                    console.log("verifiy")
+                    action_user_verify()
+                    .then(content => {
+                        response.writeHead(200, "{ 'Content-Type': 'application/json' }");
+                        response.end(JSON.stringify(content), 'utf-8');
+                    }).catch((error)=> {
+                        response.writeHead(200, "{ 'Content-Type': 'application/json' }");
+                        response.end(JSON.stringify(error), 'utf-8')
+                    });
+                }
             });
         }
     }
@@ -136,5 +183,6 @@ class API {
 
 }
 
+API.parts = null;
 
 module.exports = {API, database};
