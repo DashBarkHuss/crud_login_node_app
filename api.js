@@ -54,7 +54,7 @@ class database {
     }
 }
 
-
+//
 function action_user_register(request, payload){
     return new Promise((resolve, reject)=>{
         const accountExists = `username ='${payload.username}' AND email = '${payload.email}'`;
