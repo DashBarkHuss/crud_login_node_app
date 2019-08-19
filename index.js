@@ -39,18 +39,18 @@ const payload = {
     method: 'POST', 
     headers: {Accept:'application/json'}, 
     body: JSON.stringify({
-        email: 'boop@gmail.com', 
-        username: 'dashpoo', 
+        email: process.env.GMAIL, 
+        username: 'dashkoo', 
         password: "password"
     })
 }
 
-// fetch('http://127.0.0.1:3000/api/user/register', payload)
-// .then(promise=> promise.json())
-// .then(content => console.log("content ", content))
-// .catch((error) => { console.log("err ln51:", error) });
-
-fetch('http://127.0.0.1:3000/api/user/verify', payload)
+fetch('http://127.0.0.1:3000/api/user/register', payload)
 .then(promise=> promise.json())
 .then(content => console.log("content ", content))
 .catch((error) => { console.log("err ln51:", error) });
+
+// fetch('http://127.0.0.1:3000/api/user/verify/dashkoo/156623009547789382', payload)
+// .then(promise=> promise.json())
+// .then(content => console.log("content ", content))
+// .catch((error) => { console.log("err ln51:", error) });

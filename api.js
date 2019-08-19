@@ -1,7 +1,7 @@
 const mysql = require('mysql');
 const md5 = require('md5');
 const bcrypt = require('bcrypt');
-const nodemailer = require('nodemailer');
+const sendEmail = require('./sendEmail')
 
 class database {
     static create(){
@@ -14,8 +14,8 @@ class database {
         this.connection.connect();
         console.log("connected to database");
     };
-    static existsIn(table, clause, resolveContent, content){
-        const q = `select * from ${table} where ${clause};`
+    static existsIn(table, condition, resolveContent, content){
+        const q = `select * from ${table} where ${condition};`
         return new Promise((resolve, reject)=>{
             this.connection.query(q, (err, results)=>{
                 if (err) console.log(err);
@@ -37,13 +37,87 @@ class database {
             });
         });
     }
+    static update(table, columns, values, condition){
+        let arr = [];
+        for(i=0; i<columns.length; i++){arr.push(`${columns[i]}='${values[i]}'`)};
+        const set = arr.join(', ');
+        const q = `UPDATE ${table} SET ${set} WHERE ${condition}`;
+        console.log(q);
+        return new Promise((resolve, reject)=>{
+            this.connection.query(q,(err, results)=>{
+                if (err) reject(err);
+                resolve(results);
+                
+            })
+        });
+
+    }
 }
 
-// helper function to check user table
-function checkUserForDuplicate(clause, msg){
+
+function action_user_register(request, payload){
+    return new Promise((resolve, reject)=>{
+        const accountExists = `username ='${payload.username}' AND email = '${payload.email}'`;
+        const usernameExists = `username ='${payload.username}'`;
+        const emailExists = `email = '${payload.email}'`;
+        
+        //reject if any of these exist in user table reject with success: false
+        checkUserForDuplicate(accountExists, `Account already exists.`)
+        .then(()=> checkUserForDuplicate(usernameExists, `Username not available.`))
+        .then(()=> checkUserForDuplicate(emailExists, `Account with email already exists.`))
+        .then(content=> {
+            if(content.found === false) return createHash(payload.password);
+        }).then(password=>{
+            createAccount(password);
+        })
+        .catch( error => reject(error));
+        
+        function createAccount(password){
+            const values = [payload.username, payload.email, password];
+            const fields = `username, email, password`;
+            database.insertInto('user', fields , values).then((content)=>{
+                content.message = `Account ${payload.username} created`;
+                resolve(content);
+                sendVerificationToken(payload.email, payload.username); 
+            }).catch((error)=>(reject(error)));
+        }
+
+    })
+}
+
+function sendVerificationToken(email, username){ //what if we want to send it again? maybe this should be a global function
+    const token = (new Date).getTime().toString() + Math.floor(Math.random()*100000);
+    const condition = `username = '${username}'`;
+    createHash(token).then(hashedToken=> {
+        console.log('t: ', token, 'ht: ', hashedToken)
+        return database.update('user', ['verificationToken'], [hashedToken], condition)
+    })
+    .then(()=>{
+        const to = email
+        const subject = "Verify Your Account"
+        const text = `http://127.0.0.1:3000/api/user/verify/${username}/${token}`
+        sendEmail(to, subject, text);
+    });
+}
+function action_user_verify(){
+    const username = API.parts[3] ||  null;
+    const token = API.parts[4] || null;
+    if(!username || !token) reject({'success':false, message:'Incorrect URL'});
+    return new Promise((reject, resolve)=>{
+        createHash(token).then(hashedToken=>{
+            console.log('t: ', token, 'ht: ', hashedToken)
+            const condition = `username = '${username}' AND verificationToken = '${hashedToken}'`;
+            return database.update('user', ['isVerified'], [1], condition)
+        }).then(content => resolve(content)).catch(error=>reject(error));
+    });
+}
+
+
+// helper functions
+function checkUserForDuplicate(condition, msg){
     return database.existsIn(
         'user', 
-        clause, 
+        condition, 
         false, 
         {success:false, message: msg}
     );
@@ -63,79 +137,27 @@ function createHash(token){
     })
 }
 
-function action_user_register(request, payload){
-    return new Promise((resolve, reject)=>{
-        const accountExists = `username ='${payload.username}' AND email = '${payload.email}'`;
-        const usernameExists = `username ='${payload.username}'`;
-        const emailExists = `email = '${payload.email}'`;
-        
-        //reject if any of these exist in user table reject with success: false
-        checkUserForDuplicate(accountExists, `Account already exists.`)
-        .then(()=> checkUserForDuplicate(usernameExists, `Username not available.`))
-        .then(()=> checkUserForDuplicate(emailExists, `Account with email already exists.`))
-        .then(content=> {
-            if(content.found === false) return createHash(payload.password);
-        }).then(password=>{
-            const token = (new Date).getTime().toString() + Math.floor(Math.random()*100000);
-            return createHash(token).then(hashedToken => {
-                return {hashedToken, password, token}
-            });
-        }).then(content=>{
-            createAccount(content.password, content.hashedToken);
-            sendVerificationToken(content.token); 
-        })
-        .catch( error => reject(error));
-        
-        function createAccount(password, verificationToken){
-            const values = [payload.username, payload.email, password, verificationToken];
-            const fields = `username, email, password, verificationToken`;
-            database.insertInto('user', fields , values).then((content)=>{
-                content.message = `Account ${payload.username} created`;
-                resolve(content);
-            }).catch((error)=>(reject(error)));
-        }
-
-        function sendVerificationToken(token){ //what if we want to send it again? maybe this should be a global function
-            const transporter = nodemailer.createTransport({
-                service: 'gmail',
-                auth: {
-                    user: process.env.GMAIL,
-                    pass: process.env.GMAILPW
-                }
-            })
-            const mailOptions = {
-                from: process.env.GMAIL,
-                to: process.env.GMAIL2,
-                subject: "hey",
-                text: `http://127.0.0.1:3000/api/user/verify/${payload.username}/${token}`
-            }
-
-            transporter.sendMail(mailOptions, (error,info)=>{
-                if (error){ 
-                    console.log(error)
-                } else {
-                    console.log("Email sent: ", info.response);
-                }
-            })
-        }
-    })
-}
-
-
-function action_user_verify(){
-    const user = API.parts[3] ||  null;
-    const token = API.parts[4] || null;
-    if(!user || !token) throw "incorrect URL";
-    console.log("hi");
-}
-
 function identify(){
     const arr = [];
     for (i = 0; i<arguments.length; i++){arr.push(arguments[i])};
-    return JSON.stringify(arr) == JSON.stringify(API.parts.slice(1, API.parts.length));
+    return JSON.stringify(arr) == JSON.stringify(API.parts.slice(1, 3));
 }
+
+function respond(response, content){
+    response.writeHead(200, `{'Content-Type':'application/json'}`);
+    response.end(JSON.stringify(content), 'utf-8')
+}
+
+// API
 class API {
     static exec(request, response) {
+        let action;
+        if (request.method == "GET"){
+            if(identify('user', 'verify')){
+                action = action_user_verify();
+            }
+            handleContent();
+        }
         if (request.method == "POST"){
             request.chunks = [];
             request.on('data', segment=>{
@@ -146,28 +168,23 @@ class API {
                 let payload;
                 request.chunks.length>0? payload = JSON.parse(Buffer.concat(request.chunks).toString()) : null;
                 
+
                 if(identify('user', 'register')){
-                    action_user_register(request, payload)
-                    .then(content => {
-                        response.writeHead(200, "{ 'Content-Type': 'application/json' }");
-                        response.end(JSON.stringify(content), 'utf-8');
-                    }).catch((error)=> {
-                        response.writeHead(200, "{ 'Content-Type': 'application/json' }");
-                        response.end(JSON.stringify(error), 'utf-8')
-                    });
+                    action = action_user_register(request, payload);
                 }
 
                 if(identify('user', 'verify')){
-                    console.log("verifiy")
-                    action_user_verify()
-                    .then(content => {
-                        response.writeHead(200, "{ 'Content-Type': 'application/json' }");
-                        response.end(JSON.stringify(content), 'utf-8');
-                    }).catch((error)=> {
-                        response.writeHead(200, "{ 'Content-Type': 'application/json' }");
-                        response.end(JSON.stringify(error), 'utf-8')
-                    });
+                    action = action_user_verify();
                 }
+                handleContent();
+                
+            });
+        }
+        function handleContent(){
+            action.then(content => {
+                respond(response, content);
+            }).catch((error)=> {
+                respond(response, error);
             });
         }
     }
