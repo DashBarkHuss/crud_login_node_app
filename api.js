@@ -90,7 +90,7 @@ function sendVerificationToken(email, username){ //what if we want to send it ag
     const condition = `username = '${username}'`;
     createHash(token).then(hashedToken=> {
         console.log('t: ', token, 'ht: ', hashedToken)
-        return database.update('user', ['verificationToken'], [hashedToken], condition)
+        return database.update('user', ['verificationToken'], [hashedToken], condition);
     })
     .then(()=>{
         const to = email
@@ -104,12 +104,27 @@ function action_user_verify(){
     const token = API.parts[4] || null;
     if(!username || !token) reject({'success':false, message:'Incorrect URL'});
     return new Promise((reject, resolve)=>{
-        createHash(token).then(hashedToken=>{
+        compareHash(token, hashedToken, (err, isMatch)=>{
+            if (err) throw err;
+            if (isMatch) resolve(isMatch)
+        }).then(hashedToken=>{
             console.log('t: ', token, 'ht: ', hashedToken)
             const condition = `username = '${username}' AND verificationToken = '${hashedToken}'`;
             return database.update('user', ['isVerified'], [1], condition)
         }).then(content => resolve(content)).catch(error=>reject(error));
     });
+}
+
+function test(){
+    const token = 'password';
+    hashedToken = '$2b$11$.sKpaslUh4fS9nepyAbZ5Ou3pcNSD/zlSrU6/hek6wGfuvPVsCCRu';
+    return new Promise ((resolve, reject)=>{
+        compareHash(token, hashedToken, (err, isMatch)=>{
+            if (err) throw err;
+            if (isMatch) {
+                resolve(isMatch)}
+        }).catch(error=>resolve(error))
+    })
 }
 
 
@@ -136,6 +151,18 @@ function createHash(token){
         })
     })
 }
+
+function compareHash(token, hashedToken, cb){
+    return new Promise((reject, resolve)=>{
+        bcrypt.compare(token, hashedToken, (err, isMatch)=>{
+            if (err){
+                reject(cb(err));
+            }
+            resolve(cb(null, isMatch));
+        });
+    });
+};
+
 
 function identify(){
     const arr = [];
@@ -175,6 +202,10 @@ class API {
 
                 if(identify('user', 'verify')){
                     action = action_user_verify();
+                }
+
+                if(identify('test', 'this')){
+                    action = test();
                 }
                 handleContent();
                 
