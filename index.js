@@ -4,7 +4,7 @@ const {API, database} = require('./api.js');
 const fetch = require('node-fetch');
 
 database.create();
-
+const port = '3306';
 http.createServer((request, response)=>{
     console.log("req: ",request.url);
     let file;
@@ -33,7 +33,7 @@ http.createServer((request, response)=>{
             response.end(data, 'utf-8');
         }
     })
-}).listen(3000, '127.0.0.1')
+}).listen(port, '127.0.0.1')
 
 const payload = {
     method: 'POST', 
@@ -45,19 +45,19 @@ const payload = {
     })
 }
 
-// fetch('http://127.0.0.1:3000/api/user/register', payload)
+// fetch(`http://127.0.0.1:${port}/api/user/register`, payload)
 // .then(promise=> promise.json())
 // .then(content => console.log("content ", content))
 // .catch((error) => { console.log("err ln51:", error) });
 
-// fetch('http://127.0.0.1:3000/api/user/verify/dashkoo/156623009547789382', payload)
-// .then(promise=> promise.json())
-// .then(content => console.log("content ", content))
-// .catch((error) => { console.log("err ln51:", error) });
-
-
-fetch('http://127.0.0.1:3000/api/test/this', payload)
+fetch(`http://127.0.0.1:${port}/api/user/verify/dashkoo/156623009547789382`, payload)
 .then(promise=> promise.json())
 .then(content => console.log("content ", content))
 .catch((error) => { console.log("err ln51:", error) });
+
+
+// fetch(`http://127.0.0.1:${port}/api/test/this`, payload)
+// .then(promise=> promise.json())
+// .then(content => console.log("content ", content))
+// .catch((error) => { console.log("err ln51:", error) });
 
