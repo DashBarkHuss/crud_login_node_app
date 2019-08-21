@@ -178,12 +178,10 @@ function respond(response, content){
 // API
 class API {
     static exec(request, response) {
-        let action;
         if (request.method == "GET"){
             if(identify('user', 'verify')){
-                action = action_user_verify();
+                handleContent(action_user_verify);
             }
-            handleContent();
         }
         if (request.method == "POST"){
             request.chunks = [];
@@ -197,22 +195,21 @@ class API {
                 
 
                 if(identify('user', 'register')){
-                    action = action_user_register(request, payload);
+                    handleContent(action_user_register, [request, payload]);
                 }
 
                 if(identify('user', 'verify')){
-                    action = action_user_verify();
+                    handleContent(action_user_verify)
                 }
 
                 if(identify('test', 'this')){
-                    action = test();
+                    handleContent(test)
                 }
-                handleContent();
-                
             });
         }
-        function handleContent(){
-            action.then(content => {
+        function handleContent(action,params){
+            if (!params) params = [];
+            action(...params).then(content => {
                 respond(response, content);
             }).catch((error)=> {
                 respond(response, error);
