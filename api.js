@@ -207,8 +207,7 @@ class API {
                 }
             });
         }
-        function handleContent(action,params){
-            if (!params) params = [];
+        function handleContent(action,params = []){
             action(...params).then(content => {
                 respond(response, content);
             }).catch((error)=> {
