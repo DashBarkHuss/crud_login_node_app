@@ -35,29 +35,34 @@ http.createServer((request, response)=>{
     })
 }).listen(port, '127.0.0.1')
 
-const payload = {
-    method: 'POST', 
-    headers: {Accept:'application/json'}, 
-    body: JSON.stringify({
-        email: process.env.GMAIL, 
-        username: 'dashkoo', 
-        password: "password"
-    })
-}
+// const payload = {
+//     method: 'POST', 
+//     headers: {Accept:'application/json'}, 
+//     body: JSON.stringify({
+//         email: process.env.GMAIL, 
+//         username: 'dashkoo', 
+//         password: "password"
+//     })
+// }
 
 // fetch(`http://127.0.0.1:${port}/api/user/register`, payload)
 // .then(promise=> promise.json())
 // .then(content => console.log("content ", content))
 // .catch((error) => { console.log("err ln51:", error) });
 
-fetch(`http://127.0.0.1:${port}/api/user/verify/dashkoo/156623009547789382`, payload)
-.then(promise=> promise.json())
-.then(content => console.log("content ", content))
-.catch((error) => { console.log("err ln51:", error) });
+// fetch(`http://127.0.0.1:${port}/api/user/verify/dashkoo/156649095313176778`, payload)
+// .then(promise=> promise.json())
+// .then(content => console.log("content ", content))
+// .catch((error) => { console.log("err ln51:", error) });
 
 
 // fetch(`http://127.0.0.1:${port}/api/test/this`, payload)
 // .then(promise=> promise.json())
 // .then(content => console.log("content ", content))
 // .catch((error) => { console.log("err ln51:", error) });
+// fetch(`http://127.0.0.1:${port}/api/test/this`, payload)
+// .then(promise=> promise.json())
+// .then(content => console.log("content ", content))
+// .catch((error) => { console.log("err ln51:", error) });
 
+module.exports = port;

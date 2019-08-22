@@ -27,17 +27,14 @@ class database {
     };
 
     static findValue(table, field, condition){
-        console.log(30);
         const q = `select ${field} from ${table} where ${condition}`;
-        console.log(31);
         return new Promise ((resolve, reject)=>{
-            console.log(33, q);
             this.connection.query(q, (err,results)=>{
                 if (err) throw err;
                 if (results.length === 0){
                     reject({success: false, message:"No verification token found"})
                 } else {
-                    resolve(results[0]);
+                    resolve(results[0][field]);
                 }
             })
         })
@@ -55,8 +52,9 @@ class database {
         });
     }
     static update(table, columns, values, condition){
+        console.log(55, "update")
         let arr = [];
-        for(i=0; i<columns.length; i++){arr.push(`${columns[i]}='${values[i]}'`)};
+        for(let i=0; i<columns.length; i++){arr.push(`${columns[i]}='${values[i]}'`)};
         const set = arr.join(', ');
         const q = `UPDATE ${table} SET ${set} WHERE ${condition}`;
         console.log(q);
@@ -118,37 +116,24 @@ function action_user_verify(){
     const username = API.parts[3] ||  null;
     const token = API.parts[4] || null;
     if(!username || !token) reject({'success':false, message:'Incorrect URL'});
-    console.log(104);
     return new Promise((reject, resolve)=>{
         const condition = `username = '${username}'`
-
-        console.log(106);
+        
         database.findValue('user', 'verificationToken', condition)
         .then(hashedToken =>{
+            console.log(124)
             return compareHash(token, hashedToken, (err, isMatch)=>{
-                console.log(108);
                 if (err) throw err;
-                if (isMatch) resolve(isMatch)
+                if (isMatch) return({isMatch});
             });
         })
         .then(isMatch=>{
+            console.log(131)
             console.log('isMatch', isMatch);
             const condition = `username = '${username}' AND verificationToken = '${hashedToken}'`;
             return database.update('user', ['isVerified'], [1], condition)
-        }).then(content => resolve(content)).catch(error=>reject(error));
+        }).then(content => {console.log(132, content);resolve(content);}).catch(error=>reject(error));
     });
-}
-
-function test(){
-    const token = 'password';
-    hashedToken = '$2b$11$.sKpaslUh4fS9nepyAbZ5Ou3pcNSD/zlSrU6/hek6wGfuvPVsCCRu';
-    return new Promise ((resolve, reject)=>{
-        compareHash(token, hashedToken, (err, isMatch)=>{
-            if (err) throw err;
-            if (isMatch) {
-                resolve(isMatch)}
-        }).catch(error=>resolve(error))
-    })
 }
 
 
@@ -177,17 +162,26 @@ function createHash(token){
 }
 
 function compareHash(token, hashedToken, cb){
-    console.log(156)
-    return new Promise((reject, resolve)=>{
-        console.log(158)
-        bcrypt.compare(token, hashedToken, (err, isMatch)=>{
-            if (err){
-                reject(cb(err));
-            }
-            resolve(cb(null, isMatch));
-        });
-    });
+    return bcrypt.compare(token, hashedToken, (err, isMatch)=>{
+        if (err){
+            return(cb(err));
+        }
+        return (isMatch);
+    })
 };
+
+// function compareHash(token, hashedToken, cb){
+//     return new Promise((reject, resolve)=>{
+//        bcrypt.compare(token, hashedToken, (err, isMatch)=>{
+//             if (err){
+//                 reject(cb(err));
+//             }
+//             console.log(183, {token, hashedToken});
+//             console.log(185, cb(null, isMatch));
+//             resolve(cb(null, isMatch));
+//         });
+//     });
+// };
 
 
 function identify(){
@@ -254,4 +248,4 @@ class API {
 
 API.parts = null;
 
-module.exports = {API, database};
+module.exports = {API, database, sendVerificationToken, compareHash};
