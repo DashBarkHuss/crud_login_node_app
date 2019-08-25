@@ -16,21 +16,51 @@ const payload = {
     })
 }
 
-// fetch(`http://127.0.0.1:${port}/api/user/verify/dashkoo/156649095313176778`, payload)
+// fetch(`http://127.0.0.1:${port}/api/user/register`, payload)
 // .then(promise=> promise.json())
-// .then(content => console.log("content 20 ", content))
+// .then(content => console.log("content ", content))
 // .catch((error) => { console.log("err ln51:", error) });
 
-const someToken = process.env.TOKEN;
-const someHash = process.env.HASH;
+// fetch(`http://127.0.0.1:${port}/api/test/this`, payload)
+// .then(promise=> promise.json())
+// .then(content => console.log("content ", content))
+// .catch((error) => { console.log("err ln51:", error) });
+// fetch(`http://127.0.0.1:${port}/api/test/this`, payload)
+// .then(promise=> promise.json())
+// .then(content => console.log("content ", content))
+// .catch((error) => { console.log("err ln51:", error) });
 
-new Promise((resolve, reject)=>{
-    bcrypt.compare(someToken, someHash, (err, isMatch)=>{
-        if (err) reject(err);
-        console.log(isMatch);
-        if (isMatch) resolve({isMatch});
-    })
-}).then(x=>console.log(x))
+fetch(`http://127.0.0.1:${port}/api/user/verify/dashkoo/156649095313176778`, payload)
+.then(promise=> promise.json())
+.then(content => console.log("content test.js ", content))
+.catch((error) => { console.log("err test.js:", error) });
+
+// const someToken = process.env.TOKEN;
+// const someHash = process.env.HASH;
+
+
+// works but not what I want
+// const prom=() => {
+//     return new Promise((resolve, reject)=>{
+//         bcrypt.compare(someToken, someHash, (err, isMatch)=>{
+//             if (err) reject(err);
+//             console.log(44, {isMatch});
+//             if (isMatch) resolve({isMatch});
+//         })
+//     }).then(x=>{
+//         return new Promise((resolve, reject)=>{
+//             bcrypt.compare('444', someHash, (err, isMatch)=>{
+//                 if (err) reject(err);
+//                 console.log(54, {isMatch});
+//                 resolve({isMatch, x});
+//             })
+//         })
+// })}
+// prom().then(x=>console.log(50, x))
+
+
+
+
 
 // new Promise((resolve, reject)=>{
 //     console.log(someToken, someHash);

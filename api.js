@@ -1,74 +1,10 @@
-const mysql = require('mysql');
 const md5 = require('md5');
 const bcrypt = require('bcrypt');
-const sendEmail = require('./sendEmail')
+const sendEmail = require('./sendEmail');
+const database = require('./database');
+let {checkUserForDuplicate, createHash, compareHash,identify, respond } = require('./helpers');
 
-class database {
-    static create(){
-        this.connection = mysql.createConnection({
-            database: process.env.DATABASE,
-            host: process.env.HOST,
-            user: process.env.DBUSER,
-            password: process.env.PASSWORD
-        });
-        this.connection.connect();
-        console.log("connected to database");
-    };
-    static existsIn(table, condition, resolveContent, content){
-        const q = `select * from ${table} where ${condition};`
-        return new Promise((resolve, reject)=>{
-            this.connection.query(q, (err, results)=>{
-                if (err) console.log(err);
-                if (results.length !== 0 && resolveContent) resolve(content);
-                if (results.length !== 0 && !resolveContent) reject(content);
-                if (results.length === 0) resolve({found: false});
-            })
-        })
-    };
 
-    static findValue(table, field, condition){
-        const q = `select ${field} from ${table} where ${condition}`;
-        return new Promise ((resolve, reject)=>{
-            this.connection.query(q, (err,results)=>{
-                if (err) throw err;
-                if (results.length === 0){
-                    reject({success: false, message:"No verification token found"})
-                } else {
-                    resolve(results[0][field]);
-                }
-            })
-        })
-    }
-
-    static insertInto(table, fields, values){
-        values = values.join("', '")
-        const q = `insert into ${table}(${fields}) values('${values}')`;
-        console.log('q: ', q);
-        return new Promise((resolve, reject)=>{
-            this.connection.query(q, (err, results)=>{
-            if (err) throw err;
-            if(results.affectedRows === 1) resolve({success: true})
-            });
-        });
-    }
-    static update(table, columns, values, condition){
-        console.log(55, "update")
-        let arr = [];
-        for(let i=0; i<columns.length; i++){arr.push(`${columns[i]}='${values[i]}'`)};
-        const set = arr.join(', ');
-        const q = `UPDATE ${table} SET ${set} WHERE ${condition}`;
-        console.log(q);
-        return new Promise((resolve, reject)=>{
-            this.connection.query(q,(err, results)=>{
-                if (err) reject(err);
-                resolve(results);
-                
-            })
-        });
-    }
-}
-
-//
 function action_user_register(request, payload){
     return new Promise((resolve, reject)=>{
         const accountExists = `username ='${payload.username}' AND email = '${payload.email}'`;
@@ -100,6 +36,7 @@ function action_user_register(request, payload){
 
 function sendVerificationToken(email, username){ //what if we want to send it again? maybe this should be a global function
     const token = (new Date).getTime().toString() + Math.floor(Math.random()*100000);
+    console.log(token);
     const condition = `username = '${username}'`;
     createHash(token).then(hashedToken=> {
         console.log('t: ', token, 'ht: ', hashedToken)
@@ -113,93 +50,44 @@ function sendVerificationToken(email, username){ //what if we want to send it ag
     });
 }
 function action_user_verify(){
-    const username = API.parts[3] ||  null;
-    const token = API.parts[4] || null;
-    if(!username || !token) reject({'success':false, message:'Incorrect URL'});
-    return new Promise((reject, resolve)=>{
-        const condition = `username = '${username}'`
+    return new Promise((resolve, reject)=>{
+        const username = API.parts[3] ||  null;
+        const token = API.parts[4] || null;
+        if(!username || !token) reject({'success':false, message:'Incorrect URL'});
+        console.log(username, token)
+        let condition = `username = '${username}'`;
         
-        database.findValue('user', 'verificationToken', condition)
-        .then(hashedToken =>{
-            console.log(124)
-            return compareHash(token, hashedToken, (err, isMatch)=>{
-                if (err) throw err;
-                if (isMatch) return({isMatch});
-            });
-        })
-        .then(isMatch=>{
-            console.log(131)
-            console.log('isMatch', isMatch);
-            const condition = `username = '${username}' AND verificationToken = '${hashedToken}'`;
-            return database.update('user', ['isVerified'], [1], condition)
-        }).then(content => {console.log(132, content);resolve(content);}).catch(error=>reject(error));
-    });
-}
-
-
-// helper functions
-function checkUserForDuplicate(condition, msg){
-    return database.existsIn(
-        'user', 
-        condition, 
-        false, 
-        {success:false, message: msg}
-    );
-}
-
-function createHash(token){
-    return new Promise((resolve,reject)=>{
-        bcrypt.genSalt(11, (err,salt)=>{
-            if (err){
-                return reject(err);
+        database.findValue('user', 'isVerified', condition).then(isVerified=>{
+            if (isVerified){
+                throw({success:false, message: 'User already verified.'})
+            } else {
+            return database.findValue('user', 'verificationToken', condition)
             }
-            bcrypt.hash(token, salt, (err, hashedToken)=>{
-                if (err) reject(err);
-                resolve(hashedToken);
-            })
         })
-    })
+        .then(hashedToken =>{
+            return compareHash(token, hashedToken).then(isMatch=>({isMatch,hashedToken}))
+        })
+        .then(content=>{
+            if (content.isMatch){
+            const condition = `username = '${username}' AND verificationToken = '${content.hashedToken}'`;
+            return database.update('user', ['isVerified'], [1], condition)
+            } else {
+                reject({success: false, message: "Incorrect verification token"});
+            }
+        }).then(content => {
+            console.log(132, content);
+            resolve(content);}).catch(error=>reject(error));
+    })   
 }
 
-function compareHash(token, hashedToken, cb){
-    return bcrypt.compare(token, hashedToken, (err, isMatch)=>{
-        if (err){
-            return(cb(err));
-        }
-        return (isMatch);
-    })
-};
-
-// function compareHash(token, hashedToken, cb){
-//     return new Promise((reject, resolve)=>{
-//        bcrypt.compare(token, hashedToken, (err, isMatch)=>{
-//             if (err){
-//                 reject(cb(err));
-//             }
-//             console.log(183, {token, hashedToken});
-//             console.log(185, cb(null, isMatch));
-//             resolve(cb(null, isMatch));
-//         });
-//     });
-// };
 
 
-function identify(){
-    const arr = [];
-    for (i = 0; i<arguments.length; i++){arr.push(arguments[i])};
-    return JSON.stringify(arr) == JSON.stringify(API.parts.slice(1, 3));
-}
-
-function respond(response, content){
-    response.writeHead(200, `{'Content-Type':'application/json'}`);
-    response.end(JSON.stringify(content), 'utf-8')
-}
-
+identify = identify();
 // API
 class API {
     static exec(request, response) {
         if (request.method == "GET"){
-            if(identify('user', 'verify')){
+            if(identify()('user', 'verify')){
                 handleContent(action_user_verify);
             }
         }
@@ -214,6 +102,7 @@ class API {
                 request.chunks.length>0? payload = JSON.parse(Buffer.concat(request.chunks).toString()) : null;
 
                 if(identify('user', 'register')){
+                    console.log("id ",identify());
                     handleContent(action_user_register, [request, payload]);
                 }
 
@@ -221,9 +110,6 @@ class API {
                     handleContent(action_user_verify)
                 }
 
-                if(identify('test', 'this')){
-                    handleContent(test)
-                }
             });
         }
         function handleContent(action,params = []){
