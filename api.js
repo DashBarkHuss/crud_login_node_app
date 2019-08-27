@@ -1,4 +1,4 @@
-const md5 = require('md5');
+// const md5 = require('md5');
 const bcrypt = require('bcrypt');
 const sendEmail = require('./sendEmail');
 const database = require('./database');
@@ -54,7 +54,6 @@ function action_user_verify(){
         const username = API.parts[3] ||  null;
         const token = API.parts[4] || null;
         if(!username || !token) reject({'success':false, message:'Incorrect URL'});
-        console.log(username, token)
         let condition = `username = '${username}'`;
         
         database.findValue('user', 'isVerified', condition).then(isVerified=>{
@@ -82,12 +81,11 @@ function action_user_verify(){
 
 
 
-identify = identify();
 // API
 class API {
     static exec(request, response) {
         if (request.method == "GET"){
-            if(identify()('user', 'verify')){
+            if(identify('user', 'verify', API.parts)){
                 handleContent(action_user_verify);
             }
         }
@@ -100,13 +98,12 @@ class API {
             request.on('end',()=>{
                 let payload;
                 request.chunks.length>0? payload = JSON.parse(Buffer.concat(request.chunks).toString()) : null;
-
-                if(identify('user', 'register')){
-                    console.log("id ",identify());
+module;
+                if(identify('user', 'register', API.parts)){
                     handleContent(action_user_register, [request, payload]);
                 }
 
-                if(identify('user', 'verify')){
+                if(identify('user', 'verify', API.parts)){
                     handleContent(action_user_verify)
                 }
 
@@ -134,4 +131,4 @@ class API {
 
 API.parts = null;
 
-module.exports = {API, database, sendVerificationToken, compareHash};
+module.exports = {API, database};

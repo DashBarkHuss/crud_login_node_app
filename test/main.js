@@ -1,3 +1,5 @@
-const logArgs = require('./logArgs');
+var globalVar = "global variable";
+const moduleFunction = require('./childModule');
+module.exports = globalVar;
 
-logArgs("one", "two")
+console.log(moduleFunction())

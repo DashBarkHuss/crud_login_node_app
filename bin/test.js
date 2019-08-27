@@ -32,7 +32,7 @@ const payload = {
 
 fetch(`http://127.0.0.1:${port}/api/user/verify/dashkoo/156649095313176778`, payload)
 .then(promise=> promise.json())
-.then(content => console.log("content test.js ", content))
+.then(content => console.log("content test.js: ", content))
 .catch((error) => { console.log("err test.js:", error) });
 
 // const someToken = process.env.TOKEN;
