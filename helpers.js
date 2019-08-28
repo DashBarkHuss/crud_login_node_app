@@ -1,17 +1,20 @@
 const database = require('./database')
+const bcrypt = require('bcrypt');
+
 const helpers = {};
 
 // helper functions
-helpers.checkUserForDuplicate = (condition, msg)=>{
+helpers.checkUserForDuplicate = (condition, msg)=>{    
     return database.existsIn(
         'user', 
         condition, 
         false, 
         {success:false, message: msg}
-    );
-}
+        );
+    }
 
 helpers.createHash=(token)=>{
+    console.log(token)
     return new Promise((resolve,reject)=>{
         bcrypt.genSalt(11, (err,salt)=>{
             if (err){
@@ -28,11 +31,8 @@ helpers.createHash=(token)=>{
 helpers.compareHash=(token, hashedToken)=>{
     return new Promise ((res, rej)=>{
         bcrypt.compare(token, hashedToken, (err, isMatch)=>{
-        console.log(172, {isMatch})
-        if (err){
-            rej(err);
-        }
-        res(isMatch);
+            if (err) rej(err);
+            res(isMatch);
         })
     })
 };

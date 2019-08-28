@@ -12,7 +12,8 @@ const payload = {
     body: JSON.stringify({
         email: process.env.GMAIL, 
         username: 'dashkoo', 
-        password: "password"
+        password: "password", 
+        token: ""
     })
 }
 
@@ -21,18 +22,15 @@ const payload = {
 // .then(content => console.log("content ", content))
 // .catch((error) => { console.log("err ln51:", error) });
 
-// fetch(`http://127.0.0.1:${port}/api/test/this`, payload)
-// .then(promise=> promise.json())
-// .then(content => console.log("content ", content))
-// .catch((error) => { console.log("err ln51:", error) });
-// fetch(`http://127.0.0.1:${port}/api/test/this`, payload)
+// fetch(`http://127.0.0.1:${port}/api/sessions/create`, payload)
 // .then(promise=> promise.json())
 // .then(content => console.log("content ", content))
 // .catch((error) => { console.log("err ln51:", error) });
 
-fetch(`http://127.0.0.1:${port}/api/user/verify/dashkoo/156649095313176778`, payload)
+
+fetch(`http://127.0.0.1:${port}/api/user/verify/dashkoo/15670067695583556`, payload)
 .then(promise=> promise.json())
-.then(content => console.log("content test.js: ", content))
+.then(content =>console.log("content test.js: ", content))
 .catch((error) => { console.log("err test.js:", error) });
 
 // const someToken = process.env.TOKEN;

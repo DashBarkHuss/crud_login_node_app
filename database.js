@@ -29,9 +29,9 @@ class database {
             this.connection.query(q, (err,results)=>{
                 if (err) throw err;
                 if (results.length === 0){
-                    reject({success: false, message:"No verification token found"})
+                    resolve({success: false, message:`No value for ${field} found`})
                 } else {
-                    resolve(results[0][field]);
+                    resolve({success: true, results: results[0][field]});
                 }
             })
         })
@@ -49,12 +49,10 @@ class database {
         });
     }
     static update(table, columns, values, condition){
-        console.log(55, "update")
         let arr = [];
         for(let i=0; i<columns.length; i++){arr.push(`${columns[i]}='${values[i]}'`)};
         const set = arr.join(', ');
         const q = `UPDATE ${table} SET ${set} WHERE ${condition}`;
-        console.log(q);
         return new Promise((resolve, reject)=>{
             this.connection.query(q,(err, results)=>{
                 if (err) reject(err);
