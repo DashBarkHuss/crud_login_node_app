@@ -14,7 +14,6 @@ helpers.checkUserForDuplicate = (condition, msg)=>{
     }
 
 helpers.createHash=(token)=>{
-    console.log(token)
     return new Promise((resolve,reject)=>{
         bcrypt.genSalt(11, (err,salt)=>{
             if (err){

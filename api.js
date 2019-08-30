@@ -17,7 +17,6 @@ function action_user_register(payload){
         .then(()=> checkUserForDuplicate(usernameExists, `Username not available.`))
         .then(()=> checkUserForDuplicate(emailExists, `Account with email already exists.`))
         .then(content=> {
-            console.log("pw", payload.username);
             if(content.found === false) return createHash(payload.password);
         }).then(password=>{
             createAccount(password);
@@ -72,10 +71,8 @@ function action_user_verify(){
 }
 function sendVerificationToken(email, username){ //what if we want to send it again? maybe this should be a global function
     const token = (new Date).getTime().toString() + Math.floor(Math.random()*100000);
-    console.log(token);
     const condition = `username = '${username}'`;
     createHash(token).then(hashedToken=> {
-        console.log('t: ', token, 'ht: ', hashedToken)
         return database.update('user', ['verificationToken'], [hashedToken], condition);
     })
     .then(()=>{
@@ -94,19 +91,52 @@ function action_user_login(request, payload){
     //no session? create session
     //session? return token or should we create a new session and delete the old one?
     return new Promise((resolve, reject)=>{
-        database.findValue('user', 'password', `username='${payload.username}'`)
-        .then(foundInfo=>{
-            if (foundInfo.success){
-                return(foundInfo.results)
-            } else {
-                throw ({success: false, message: "password missing from database"})
-            }
-        })
-        .then(hashedPassword => compareHash(payload.password, hashedPassword))
-        .then()//left off
-        .catch(err=>resolve(err));
+        userLoggedIn(request, payload)
+        // .then(loggedIn=>{
+        //     if(loggedIn) throw {success:false, message:"Already logged in"};
+        //     return database.findValue('user', 'password', `username='${payload.username}'`)
+        // })
+        // .then(foundInfo=>{
+        //     if (foundInfo.success){
+        //         return(foundInfo.results)
+        //     } else {
+        //         throw ({success: false, message: "password missing from database"})
+        //     }
+        // })
+        // .then(hashedPassword => compareHash(payload.password, hashedPassword))
+        // .then(isMatch=>{
+        //     if (isMatch){
+        //         resolve(action_sessions_create(request, payload).then(token=>{return{success:true, token}}))
+        //     } else {
+        //         resolve({success: false, message: 'incorrect password or account'})
+        //     }
+        // })
+        // .catch(err=>resolve(err));
     })
 }
+
+function userLoggedIn(request, payload){
+    //promise that returns boolean
+    return new Promise((resolve, reject)=>{
+        if (!payload.token) throw false;
+        database.findValues('sessions', 'token', `username='${payload.username}' AND useragent = '${request.headers['user-agent']}'`)
+        .then(results=>{
+            if (!results.success) throw false;
+            return new Promise((res,rej)=>{
+                for(i=0; i<results.results.length; i++){
+                    compareHash(payload.token, results.results[i].token)
+                    .then(isMatch=>{
+                        console.log(isMatch, 129);
+                        if (isMatch) res(true); //or resolve
+                    })
+                }
+            })
+        })
+        .then(loggedIn=>console.log({loggedIn, line: ".then 135"}))
+        .catch(loggedIn => {console.log({loggedIn, line: "catch"})})
+    })
+}
+
 function action_sessions_create(request, payload){
     const token = (new Date).getTime().toString() + Math.floor(Math.random()*100000);
     return new Promise((resolve, reject)=>{
@@ -167,6 +197,9 @@ module;
 
                 if(identify('user', 'verify', API.parts)){
                     handleContent(action_user_verify)
+                }
+                if(identify('user', 'login', API.parts)){
+                    handleContent(action_user_login, [request, payload])
                 }
 
             });
