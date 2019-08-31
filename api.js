@@ -92,48 +92,49 @@ function action_user_login(request, payload){
     //session? return token or should we create a new session and delete the old one?
     return new Promise((resolve, reject)=>{
         userLoggedIn(request, payload)
-        // .then(loggedIn=>{
-        //     if(loggedIn) throw {success:false, message:"Already logged in"};
-        //     return database.findValue('user', 'password', `username='${payload.username}'`)
-        // })
-        // .then(foundInfo=>{
-        //     if (foundInfo.success){
-        //         return(foundInfo.results)
-        //     } else {
-        //         throw ({success: false, message: "password missing from database"})
-        //     }
-        // })
-        // .then(hashedPassword => compareHash(payload.password, hashedPassword))
-        // .then(isMatch=>{
-        //     if (isMatch){
-        //         resolve(action_sessions_create(request, payload).then(token=>{return{success:true, token}}))
-        //     } else {
-        //         resolve({success: false, message: 'incorrect password or account'})
-        //     }
-        // })
-        // .catch(err=>resolve(err));
+        .then(loggedIn=>{
+            if(loggedIn) throw {success:false, message:"Already logged in"};
+            return database.findValue('user', 'password', `username='${payload.username}'`)
+        })
+        .then(foundInfo=>{
+            if (foundInfo.success){
+                return(foundInfo.results)
+            } else {
+                throw ({success: false, message: "password missing from database"})
+            }
+        })
+        .then(hashedPassword => compareHash(payload.password, hashedPassword))
+        .then(isMatch=>{
+            if (isMatch){
+                resolve(action_sessions_create(request, payload).then(token=>{return{success:true, token}}))
+            } else {
+                resolve({success: false, message: 'incorrect password or account'})
+            }
+        })
+        .catch(err=>resolve(err));
     })
 }
 
 function userLoggedIn(request, payload){
-    //promise that returns boolean
+    async function compareHashes(hashes){
+        for (i=0; i<hashes.length; i++){
+            const matchFound = await compareHash(payload.token, hashes[i].token)
+            if (matchFound){
+                i = hashes.length;
+                return true;
+            } else if (i==hashes.length-1){
+                return false;
+            }
+        }
+    }
     return new Promise((resolve, reject)=>{
-        if (!payload.token) throw false;
         database.findValues('sessions', 'token', `username='${payload.username}' AND useragent = '${request.headers['user-agent']}'`)
         .then(results=>{
-            if (!results.success) throw false;
-            return new Promise((res,rej)=>{
-                for(i=0; i<results.results.length; i++){
-                    compareHash(payload.token, results.results[i].token)
-                    .then(isMatch=>{
-                        console.log(isMatch, 129);
-                        if (isMatch) res(true); //or resolve
-                    })
-                }
-            })
+            if(results.success){
+            return compareHashes(results.results)
+            }
         })
-        .then(loggedIn=>console.log({loggedIn, line: ".then 135"}))
-        .catch(loggedIn => {console.log({loggedIn, line: "catch"})})
+        .then(matchFound=>resolve(matchFound))
     })
 }
 
