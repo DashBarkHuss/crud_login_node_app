@@ -1,1 +1,43 @@
-index
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+</head>
+<body>
+    <button onclick='
+    const payload = {
+        method: "POST", 
+        headers: {Accept:"application/json"}, 
+        body: JSON.stringify({
+            // email: process.env.GMAIL, 
+            username: "dashkoo", 
+            password: "password",
+            token: "156735732643059593"
+        })
+    }
+    fetch(`http://127.0.0.1:3306/api/user/login`, payload)
+    .then(promise=> promise.json())
+    .then(content => console.log("content ", content))
+    .catch((error) => { console.log("err ln51:", error) });
+    '>login</button>
+    <button onclick='
+      const payload = {
+        method: "POST", 
+        headers: {Accept:"application/json"}, 
+        body: JSON.stringify({
+            // email: process.env.GMAIL, 
+            username: "dashkoo", 
+            password: "password",
+            token: "156735732643059593"
+        })
+    }
+    fetch(`http://127.0.0.1:3306/api/user/logout`, payload)
+    .then(promise=> promise.json())
+    .then(content => console.log("content ", content))
+    .catch((error) => { console.log("err ln51:", error) });
+    '>logout</button>
+</body>
+</html>

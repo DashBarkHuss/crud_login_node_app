@@ -109,6 +109,9 @@ function action_user_login(request, payload){
     })
 }
 
+function action_user_logout(request, payload){
+
+}
 function userLoggedIn(request, payload){
     if (!payload.token) return (async ()=>false)();
     async function compareHashes(hashes){
@@ -172,10 +175,9 @@ function action_sessions_get(username, token, useragent){
 // API
 class API {
     static exec(request, response) {
+
         if (request.method == "GET"){
-            if(identify('user', 'verify', API.parts)){
-                handleContent(action_user_verify);
-            }
+            actionFor('user', 'verify', action_user_verify);
         }
         if (request.method == "POST"){
             request.chunks = [];
@@ -187,18 +189,22 @@ class API {
                 let payload;
                 request.chunks.length>0? payload = JSON.parse(Buffer.concat(request.chunks).toString()) : null;
 module;
-                if(identify('user', 'register', API.parts)){
-                    handleContent(action_user_register, [payload]);
-                }
+                actionFor('user', 'register', action_user_register, [payload])
 
-                if(identify('user', 'verify', API.parts)){
-                    handleContent(action_user_verify)
-                }
-                if(identify('user', 'login', API.parts)){
-                    handleContent(action_user_login, [request, payload])
-                }
+                actionFor('user', 'verify', action_user_verify)
+            
+                actionFor('user', 'login', action_user_login, [request, payload])
+                
+                actionFor('user', 'logout', action_user_logout, [request, payload])
 
             });
+        }
+
+        //helpers
+        function actionFor(api1, api2, action, paramArray=[]){
+            if(identify(api1, api2, API.parts)){
+                handleContent(action, paramArray);
+            }
         }
         function handleContent(action,params = []){
             action(...params).then(content => {
