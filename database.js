@@ -29,7 +29,8 @@ class database {
             this.connection.query(q, (err,results)=>{
                 if (err) throw err;
                 if (results.length === 0){
-                    resolve({success: false, message:`No value for ${field} found`})
+                    const message = `No value for ${field} found where ${condition.slice(0,25)+"..."}`;
+                    resolve({success: false, message})
                 } else {
                     resolve({success: true, results: results[0][field]});
                 }
@@ -43,7 +44,8 @@ class database {
             this.connection.query(q, (err,results)=>{
                 if (err) throw err;
                 if (results.length === 0){
-                    resolve({success: false, message:`No values for ${field} found`})
+                    const message = `No values for ${field} found where ${condition.slice(0,25)+"..."}`;
+                    resolve({success: false, message})
                 } else {
                     resolve({success: true, results: results});
                 }

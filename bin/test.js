@@ -12,8 +12,8 @@ const payload = {
     body: JSON.stringify({
         email: process.env.GMAIL, 
         username: 'dashkoo', 
-        password: "password", 
-        token: '15671031282604546'//'156710330373756863'
+        password: "password",
+        token: "156735476518069653"
     })
 }
 

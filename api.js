@@ -84,12 +84,6 @@ function sendVerificationToken(email, username){ //what if we want to send it ag
 }
 
 function action_user_login(request, payload){
-
-    // get hashed password
-    //compare
-    // action_sessions_get
-    //no session? create session
-    //session? return token or should we create a new session and delete the old one?
     return new Promise((resolve, reject)=>{
         userLoggedIn(request, payload)
         .then(loggedIn=>{
@@ -100,7 +94,7 @@ function action_user_login(request, payload){
             if (foundInfo.success){
                 return(foundInfo.results)
             } else {
-                throw ({success: false, message: "password missing from database"})
+                throw (foundInfo)
             }
         })
         .then(hashedPassword => compareHash(payload.password, hashedPassword))
@@ -116,6 +110,7 @@ function action_user_login(request, payload){
 }
 
 function userLoggedIn(request, payload){
+    if (!payload.token) return (async ()=>false)();
     async function compareHashes(hashes){
         for (i=0; i<hashes.length; i++){
             const matchFound = await compareHash(payload.token, hashes[i].token)
