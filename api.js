@@ -110,29 +110,18 @@ function action_user_login(request, payload){
 }
 
 function action_user_logout(request, payload){
-
+    return new Promise ((resolve, reject)=>{
+        database.findValues('sessions', 'token', )
+    });
 }
+
 function userLoggedIn(request, payload){
-    if (!payload.token) return (async ()=>false)();
-    async function compareHashes(hashes){
-        for (i=0; i<hashes.length; i++){
-            const matchFound = await compareHash(payload.token, hashes[i].token)
-            if (matchFound){
-                i = hashes.length;
-                return true;
-            } else if (i==hashes.length-1){
-                return false;
-            }
-        }
-    }
     return new Promise((resolve, reject)=>{
-        database.findValues('sessions', 'token', `username='${payload.username}' AND useragent = '${request.headers['user-agent']}'`)
-        .then(results=>{
-            if(results.success){
-            return compareHashes(results.results)
-            }
+        action_sessions_get(request,payload)
+        .then(hash=>{
+            if(hash) resolve(true);
+            else resolve(false);
         })
-        .then(matchFound=>resolve(matchFound))
     })
 }
 
@@ -149,23 +138,29 @@ function action_sessions_create(request, payload){
 }
 
 
-function action_sessions_get(username, token, useragent){
-    return new Promise((resolve, reject)=>{
-        database.findValue('sessions', 'token', `username = '${username}' AND useragent = ${useragent}`)
-        .then(foundInfo => {
-            if(foundInfo.success){
-                return foundInfo.results;
-            } else {
-                throw foundInfo;
+function action_sessions_get(request, payload){
+    if (!payload.token) return (async ()=>false)();
+    async function compareHashes(token, hashes){
+        for (i=0; i<hashes.length; i++){
+            const matchFound = await compareHash(token, hashes[i].token)
+            if (matchFound){
+                hash = hashes[i].token;
+                i = hashes.length;
+                return hash;
+            } else if (i==hashes.length-1){
+                return false;
             }
+        }
+    }
+    return new Promise((resolve, reject)=>{
+        console.log(2)
+        database.findValues('sessions', 'token', `username = '${payload.username}' AND useragent = '${request.headers['user-agent']}'`)
+        .then(hashes=>{
+            if (hashes.results.length === 1) throw (hashes.results[0])
+            return compareHashes(payload.token, hashes.results)
         })
-        .then(hashedToken=>{
-            return compareHash(token, hashedToken)
-        })
-        .then(isMatch=>{
-            if(!isMatch) throw ({success: isMatch, message: "tokens do not match"});
-            if(isMatch) resolve({success: isMatch, message: "tokens match"});
-            
+        .then(hash=>{
+            resolve(hash)
         })
         .catch(err => resolve(err))
         //compare tokens
@@ -196,7 +191,10 @@ module;
                 actionFor('user', 'login', action_user_login, [request, payload])
                 
                 actionFor('user', 'logout', action_user_logout, [request, payload])
-
+                
+                actionFor('sessions', 'get', action_sessions_get, [request, payload])
+                
+                actionFor('sessions', 'create', action_sessions_create, [request, payload])
             });
         }
 

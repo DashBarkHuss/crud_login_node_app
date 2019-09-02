@@ -37,6 +37,10 @@ fetch(`http://127.0.0.1:${port}/api/user/login`, payload)
 // .then(content => console.log("content ", content))
 // .catch((error) => { console.log("err ln51:", error) });
 
+// fetch(`http://127.0.0.1:${port}/api/sessions/get`, payload)
+// .then(promise=> promise.json())
+// .then(content => console.log("content ", content))
+// .catch((error) => { console.log("err ln51:", error) });
 
 // fetch(`http://127.0.0.1:${port}/api/user/verify/dashkoo/15670067695583556`, payload)
 // .then(promise=> promise.json())

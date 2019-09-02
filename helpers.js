@@ -10,8 +10,8 @@ helpers.checkUserForDuplicate = (condition, msg)=>{
         condition, 
         false, 
         {success:false, message: msg}
-        );
-    }
+    );
+}
 
 helpers.createHash=(token)=>{
     return new Promise((resolve,reject)=>{
