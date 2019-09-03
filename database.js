@@ -75,6 +75,17 @@ class database {
             })
         });
     }
+    static delete(table, condition){
+        const q = `DELETE FROM ${table} WHERE ${condition}`;
+        console.log(q)
+        return new Promise((resolve, reject)=>{
+            this.connection.query(q,(err, results)=>{
+                if (err) reject(err);
+                console.log(results);
+                resolve(results);
+            })
+        })
+    }
 }
 
 module.exports = database;

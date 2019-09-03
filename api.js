@@ -111,7 +111,14 @@ function action_user_login(request, payload){
 
 function action_user_logout(request, payload){
     return new Promise ((resolve, reject)=>{
-        database.findValues('sessions', 'token', )
+        action_sessions_get(request, payload)
+        .then(hash=>{
+            console.log(116, hash)
+            database.delete('sessions', `token='${hash}'`)
+            .then(results=>{
+                if (results.affectedRows > 0) resolve({success: true, message: payload.username + ' logged out'})
+            })
+        })
     });
 }
 
@@ -119,6 +126,7 @@ function userLoggedIn(request, payload){
     return new Promise((resolve, reject)=>{
         action_sessions_get(request,payload)
         .then(hash=>{
+            console.log(hash)
             if(hash) resolve(true);
             else resolve(false);
         })
@@ -156,10 +164,12 @@ function action_sessions_get(request, payload){
         console.log(2)
         database.findValues('sessions', 'token', `username = '${payload.username}' AND useragent = '${request.headers['user-agent']}'`)
         .then(hashes=>{
-            if (hashes.results.length === 1) throw (hashes.results[0])
+            if (!hashes.success) throw false;
+            if (hashes.results.length === 1) throw (hashes.results[0].token)
             return compareHashes(payload.token, hashes.results)
         })
         .then(hash=>{
+            console.log(170, hash);
             resolve(hash)
         })
         .catch(err => resolve(err))
