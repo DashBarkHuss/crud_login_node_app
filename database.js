@@ -56,10 +56,12 @@ class database {
     static insertInto(table, fields, values){
         values = values.join("', '")
         const q = `insert into ${table}(${fields}) values('${values}')`;
+        console.log(q)
         return new Promise((resolve, reject)=>{
             this.connection.query(q, (err, results)=>{
             if (err) throw err;
-            if(results.affectedRows === 1) resolve({success: true})
+            if(results.affectedRows >= 1) resolve({success: true})
+            else if (results.affectedRows === 0) resolve({success: false, message: "nothing inserted into database"})
             });
         });
     }

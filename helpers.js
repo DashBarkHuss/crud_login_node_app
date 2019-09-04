@@ -36,6 +36,21 @@ helpers.compareHash=(token, hashedToken)=>{
     })
 };
 
+helpers.compareHashes = async function compareHashes(token, hashes){
+    for (i=0; i<hashes.length; i++){
+        const matchFound = await helpers.compareHash(token, hashes[i].token)
+        if (matchFound){
+            hash = hashes[i].token;
+            i = hashes.length;
+            return hash;
+        } else if (i==hashes.length-1){
+            return false;
+        }
+    }
+}
+
+
+
 helpers.identify= function(){ 
         const arr = [];
         for (i = 0; i<arguments.length-1; i++){arr.push(arguments[i])};

@@ -13,7 +13,9 @@ const payload = {
         email: process.env.GMAIL, 
         username: 'dashkoo', 
         password: "password",
-        token: "156753094690074444"
+        token: "15676128789422662",
+
+        message: "Hey, good day!!"
     })
 }
 
@@ -37,10 +39,15 @@ const payload = {
 // .then(content => console.log("content ", content))
 // .catch((error) => { console.log("err ln51:", error) });
 
-fetch(`http://127.0.0.1:${port}/api/sessions/get`, payload)
+fetch(`http://127.0.0.1:${port}/api/posts/create`, payload)
 .then(promise=> promise.json())
 .then(content => console.log("content ", content))
 .catch((error) => { console.log("err ln51:", error) });
+
+// fetch(`http://127.0.0.1:${port}/api/sessions/get`, payload)
+// .then(promise=> promise.json())
+// .then(content => console.log("content ", content))
+// .catch((error) => { console.log("err ln51:", error) });
 
 // fetch(`http://127.0.0.1:${port}/api/user/verify/dashkoo/15670067695583556`, payload)
 // .then(promise=> promise.json())

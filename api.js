@@ -2,7 +2,7 @@
 // const bcrypt = require('bcrypt');
 const sendEmail = require('./sendEmail');
 const database = require('./database');
-let {checkUserForDuplicate, createHash, compareHash, identify, respond } = require('./helpers');
+let {checkUserForDuplicate, createHash, compareHash, compareHashes, identify, respond } = require('./helpers');
 
 
 function action_user_register(payload){
@@ -113,7 +113,6 @@ function action_user_logout(request, payload){
     return new Promise ((resolve, reject)=>{
         action_sessions_get(request, payload)
         .then(hash=>{
-            console.log(116, hash)
             database.delete('sessions', `token='${hash}'`)
             .then(results=>{
                 if (results.affectedRows > 0) resolve({success: true, message: payload.username + ' logged out'})
@@ -122,11 +121,15 @@ function action_user_logout(request, payload){
     });
 }
 
-function userLoggedIn(request, payload){
+async function userLoggedIn(request, payload){
+    return isAuthorized(request, payload);
+}
+
+function isAuthorized(request, payload){
     return new Promise((resolve, reject)=>{
+        
         action_sessions_get(request,payload)
         .then(hash=>{
-            console.log(hash)
             if(hash) resolve(true);
             else resolve(false);
         })
@@ -148,32 +151,32 @@ function action_sessions_create(request, payload){
 
 function action_sessions_get(request, payload){
     if (!payload.token) return (async ()=>false)();
-    async function compareHashes(token, hashes){
-        for (i=0; i<hashes.length; i++){
-            const matchFound = await compareHash(token, hashes[i].token)
-            if (matchFound){
-                hash = hashes[i].token;
-                i = hashes.length;
-                return hash;
-            } else if (i==hashes.length-1){
-                return false;
-            }
-        }
-    }
     return new Promise((resolve, reject)=>{
-        console.log(2)
         database.findValues('sessions', 'token', `username = '${payload.username}' AND useragent = '${request.headers['user-agent']}'`)
         .then(hashes=>{
             if (!hashes.success) throw false;
-            if (hashes.results.length === 1) throw (hashes.results[0].token)
             return compareHashes(payload.token, hashes.results)
         })
         .then(hash=>{
-            console.log(170, hash);
             resolve(hash)
         })
-        .catch(err => resolve(err))
+        .catch(err => {console.log(166);resolve(err)})
         //compare tokens
+    })
+}
+
+function action_posts_create(request, payload){
+    return new Promise((resolve, reject)=>{
+        isAuthorized(request, payload)
+        .then(isAuthorized=>{
+            if(isAuthorized) return database.insertInto('posts', 'message, username', [payload.message, payload.username]);
+            else throw({success: false, message: `You are not authorized to post. Please log in`})
+        })
+        .then(info=>{
+            let message;
+            info.success? message = "Post created" : message = "Post not created";
+            resolve(message);
+        }).catch(err=>resolve(err))
     })
 }
 
@@ -205,6 +208,8 @@ module;
                 actionFor('sessions', 'get', action_sessions_get, [request, payload])
                 
                 actionFor('sessions', 'create', action_sessions_create, [request, payload])
+                
+                actionFor('posts', 'create', action_posts_create, [request, payload])
             });
         }
 
