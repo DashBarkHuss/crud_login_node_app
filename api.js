@@ -183,12 +183,31 @@ function action_posts_create(request, payload){
 function action_posts_read(payload){
     //get the post then serve it to a template eventually
     return new Promise((resolve, reject)=>{
-        console.log(185);
         database.findRecords("posts", `id=${payload.id}`)
         .then(results=>{
             if(results.length===0) resolve("No entries");
             else resolve(results);
         })
+    })
+}
+
+function action_posts_update(request, payload){
+    return new Promise((resolve, reject)=>{
+        isAuthorized(request, payload)
+        .then(isAuthorized=>{
+            if(!isAuthorized) throw "Not authorized to update, please login.";
+            return database.findValue('posts', 'username', `id=${payload.id}`)
+        })
+        .then(results=>{
+            const postUsername = results.results;
+            if(payload.username!==postUsername) throw "Not authorized to update this post, please switch to the authorized account."
+            return database.update('posts', ['message'], [payload.message], `id=${payload.id}`)
+        })
+        .then(results=>{
+            let message;
+            results.changedRows === 1 ? message = "post updated": message = "no post updated";
+            resolve(message);
+        }).catch(err=>reject(err))
     })
 }
 
@@ -224,6 +243,8 @@ module;
                 actionFor('posts', 'create', action_posts_create, [request, payload])
                 
                 actionFor('posts', 'read', action_posts_read, [payload])
+                
+                actionFor('posts', 'update', action_posts_update, [request, payload])
             });
         }
 
