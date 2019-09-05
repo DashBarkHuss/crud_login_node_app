@@ -191,18 +191,24 @@ function action_posts_read(payload){
     })
 }
 
-function action_posts_update(request, payload){
-    return new Promise((resolve, reject)=>{
+function isAuthorizedToEditPost(request, payload){
+    return new Promise((resolve,reject)=>{
         isAuthorized(request, payload)
         .then(isAuthorized=>{
-            if(!isAuthorized) throw "Not authorized to update, please login.";
+            if(!isAuthorized) throw "Not authorized, please login.";
             return database.findValue('posts', 'username', `id=${payload.id}`)
         })
         .then(results=>{
             const postUsername = results.results;
             if(payload.username!==postUsername) throw "Not authorized to update this post, please switch to the authorized account."
-            return database.update('posts', ['message'], [payload.message], `id=${payload.id}`)
-        })
+            resolve(database.update('posts', ['message'], [payload.message], `id=${payload.id}`))
+        }).catch(err=>reject(err))
+    })
+}
+
+function action_posts_update(request, payload){
+    return new Promise((resolve, reject)=>{
+        isAuthorizedToEditPost(request, payload)
         .then(results=>{
             let message;
             results.changedRows === 1 ? message = "post updated": message = "no post updated";
