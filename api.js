@@ -195,13 +195,12 @@ function isAuthorizedToEditPost(request, payload){
     return new Promise((resolve,reject)=>{
         isAuthorized(request, payload)
         .then(isAuthorized=>{
-            if(!isAuthorized) throw "Not authorized, please login.";
+            if(!isAuthorized) throw false;
             return database.findValue('posts', 'username', `id=${payload.id}`)
-        })
-        .then(results=>{
+        }).then(results=>{
             const postUsername = results.results;
-            if(payload.username!==postUsername) throw "Not authorized to update this post, please switch to the authorized account."
-            resolve(database.update('posts', ['message'], [payload.message], `id=${payload.id}`))
+            if(payload.username!==postUsername) throw false;
+            resolve(true);
         }).catch(err=>reject(err))
     })
 }
@@ -209,13 +208,18 @@ function isAuthorizedToEditPost(request, payload){
 function action_posts_update(request, payload){
     return new Promise((resolve, reject)=>{
         isAuthorizedToEditPost(request, payload)
-        .then(results=>{
+        .then(isAuthorized=>{
+            if(!isAuthorized) throw "Not authorized."
+            return database.update('posts', ['message'], [payload.message], `id=${payload.id}`)
+        }).then(results=>{
             let message;
-            results.changedRows === 1 ? message = "post updated": message = "no post updated";
+            results.changedRows === 1 ? message = "post updated": message = "nothing to change";
             resolve(message);
         }).catch(err=>reject(err))
     })
 }
+
+// function action_posts_delete(request,payload)
 
 // API
 class API {
