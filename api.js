@@ -180,6 +180,18 @@ function action_posts_create(request, payload){
     })
 }
 
+function action_posts_read(payload){
+    //get the post then serve it to a template eventually
+    return new Promise((resolve, reject)=>{
+        console.log(185);
+        database.findRecords("posts", `id=${payload.id}`)
+        .then(results=>{
+            if(results.length===0) resolve("No entries");
+            else resolve(results);
+        })
+    })
+}
+
 // API
 class API {
     static exec(request, response) {
@@ -210,6 +222,8 @@ module;
                 actionFor('sessions', 'create', action_sessions_create, [request, payload])
                 
                 actionFor('posts', 'create', action_posts_create, [request, payload])
+                
+                actionFor('posts', 'read', action_posts_read, [payload])
             });
         }
 

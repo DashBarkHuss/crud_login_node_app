@@ -14,7 +14,7 @@ const payload = {
         username: 'dashkoo', 
         password: "password",
         token: "15676128789422662",
-
+        id: 6,
         message: "Hey, good day!!"
     })
 }
@@ -39,7 +39,12 @@ const payload = {
 // .then(content => console.log("content ", content))
 // .catch((error) => { console.log("err ln51:", error) });
 
-fetch(`http://127.0.0.1:${port}/api/posts/create`, payload)
+// fetch(`http://127.0.0.1:${port}/api/posts/create`, payload)
+// .then(promise=> promise.json())
+// .then(content => console.log("content ", content))
+// .catch((error) => { console.log("err ln51:", error) });
+
+fetch(`http://127.0.0.1:${port}/api/posts/read`, payload)
 .then(promise=> promise.json())
 .then(content => console.log("content ", content))
 .catch((error) => { console.log("err ln51:", error) });

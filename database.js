@@ -52,11 +52,19 @@ class database {
             })
         })
     }
+    static findRecords(table, condition){
+        const q = `select * from ${table} where ${condition}`;
+        return new Promise ((resolve, reject)=>{
+            this.connection.query(q, (err,results)=>{
+                if (err) throw err;
+                resolve(results);
+            })
+        }).catch(err=>reject(err))
+    }
 
     static insertInto(table, fields, values){
         values = values.join("', '")
         const q = `insert into ${table}(${fields}) values('${values}')`;
-        console.log(q)
         return new Promise((resolve, reject)=>{
             this.connection.query(q, (err, results)=>{
             if (err) throw err;

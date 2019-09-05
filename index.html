@@ -39,5 +39,23 @@
     .then(content => console.log("content ", content))
     .catch((error) => { console.log("err ln51:", error) });
     '>logout</button>
+    
+    <button onclick='
+    const payload = {
+      method: "POST", 
+      headers: {Accept:"application/json"}, 
+      body: JSON.stringify({
+          // email: process.env.GMAIL, 
+          username: "dashkoo", 
+          password: "password",
+          id: 6,
+          token: "156735732643059593"
+      })
+  }
+  fetch(`http://127.0.0.1:3306/api/posts/read`, payload)
+  .then(promise=> promise.json())
+  .then(content => console.log("content ", content))
+  .catch((error) => { console.log("err ln51:", error) });
+  '>read</button>
 </body>
 </html>
