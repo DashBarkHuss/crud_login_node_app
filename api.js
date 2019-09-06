@@ -121,21 +121,6 @@ function action_user_logout(request, payload){
     });
 }
 
-async function userLoggedIn(request, payload){
-    return isAuthorized(request, payload);
-}
-
-function isAuthorized(request, payload){
-    return new Promise((resolve, reject)=>{
-        
-        action_sessions_get(request,payload)
-        .then(hash=>{
-            if(hash) resolve(true);
-            else resolve(false);
-        })
-    })
-}
-
 function action_sessions_create(request, payload){
     const token = (new Date).getTime().toString() + Math.floor(Math.random()*100000);
     return new Promise((resolve, reject)=>{
@@ -191,20 +176,6 @@ function action_posts_read(payload){
     })
 }
 
-function isAuthorizedToEditPost(request, payload){
-    return new Promise((resolve,reject)=>{
-        isAuthorized(request, payload)
-        .then(isAuthorized=>{
-            if(!isAuthorized) throw false;
-            return database.findValue('posts', 'username', `id=${payload.id}`)
-        }).then(results=>{
-            const postUsername = results.results;
-            if(payload.username!==postUsername) throw false;
-            resolve(true);
-        }).catch(err=>reject(err))
-    })
-}
-
 function action_posts_update(request, payload){
     return new Promise((resolve, reject)=>{
         isAuthorizedToEditPost(request, payload)
@@ -219,7 +190,48 @@ function action_posts_update(request, payload){
     })
 }
 
-// function action_posts_delete(request,payload)
+async function action_posts_delete(request, payload){
+    return await isAuthorizedToEditPost(request, payload)
+    .then(isAuthorized=>{
+        console.log(182);
+        if(!isAuthorized) throw "not authorized to delete post, or post doesn't exist";
+        return database.delete("posts", `id=${payload.id}`)
+    }).then(results=>{
+        console.log(results)
+        let message;
+        results.affectedRows === 1 ? message = "deleted": message = "nothing deleted";
+        return message;
+    }).catch(err=>err)
+}
+
+async function userLoggedIn(request, payload){
+    return isAuthorized(request, payload);
+}
+
+function isAuthorized(request, payload){
+    return new Promise((resolve, reject)=>{
+        
+        action_sessions_get(request,payload)
+        .then(hash=>{
+            if(hash) resolve(true);
+            else resolve(false);
+        })
+    })
+}
+
+function isAuthorizedToEditPost(request, payload){
+    return new Promise((resolve,reject)=>{
+        isAuthorized(request, payload)
+        .then(isAuthorized=>{
+            if(!isAuthorized) throw false;
+            return database.findValue('posts', 'username', `id=${payload.id}`)
+        }).then(results=>{
+            const postUsername = results.results;
+            if(payload.username!==postUsername) throw false;
+            resolve(true);
+        }).catch(err=>resolve(err))
+    })
+}
 
 // API
 class API {
@@ -255,6 +267,8 @@ module;
                 actionFor('posts', 'read', action_posts_read, [payload])
                 
                 actionFor('posts', 'update', action_posts_update, [request, payload])
+                
+                actionFor('posts', 'delete', action_posts_delete, [request, payload])
             });
         }
 
