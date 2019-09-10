@@ -2,7 +2,7 @@ This vanilla node app has CRUD and logins. Though it works, there are some chang
 
   - My database helpers should be more uniform. They should probably all return the results of the query and I should handle the results from the function call. Instead, the results are handled in some of the helpers, which makes it hard to remember what the helper is going to return to the function call.
   - Some catch statements are missing.
-  - I used some `async function`s for my API endpoints and some `new Promise` consrtuctors. In production, I'd stick to one or the other to make the code more uniform and easier to read. But in this project I played with both for practice.
+  - I used some `async function`s for my API endpoints and some `new Promise` constructors. In production, I'd stick to one or the other to make the code more uniform and easier to read. But in this project I played with both for practice.
 
 ## How to use:
 
